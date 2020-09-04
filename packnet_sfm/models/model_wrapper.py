@@ -167,6 +167,7 @@ class ModelWrapper(torch.nn.Module):
 
     def train_dataloader(self):
         """Prepare training dataloader."""
+        print('len train_dataset: ', len(self.train_dataset))
         return setup_dataloader(self.train_dataset,
                                 self.config.datasets.train, 'train')[0]
 
@@ -180,22 +181,32 @@ class ModelWrapper(torch.nn.Module):
         return setup_dataloader(self.test_dataset,
                                 self.config.datasets.test, 'test')
 
-    def training_step(self, batch, *args):
+    def training_step(self, batch, log_dir, *args):
         """Processes a training batch."""
         batch = stack_batch(batch)
         output = self.model(batch, progress=self.progress)
+        #print(output.keys())
+        np.save(os.path.join(log_dir,'deneme_depth.npy'), output['inv_depths'][0][0,:,:,:].permute(1,2,0).detach().cpu().numpy())
         return {
             'loss': output['loss'],
             'metrics': output['metrics']
         }
 
-    def validation_step(self, batch, *args):
+    def validation_step(self, batch, idx, seq_name, log_dir, *args):
         """Processes a validation batch."""
         output = self.evaluate_depth(batch)
-        if self.logger:
-            self.logger.log_depth('val', batch, output, args,
-                                  self.validation_dataset, world_size(),
-                                  self.config.datasets.validation)
+        print(len(output['inv_depth']))
+        print(output['inv_depth'][0].shape)
+        #if self.logger:
+        #    self.logger.log_depth('val', batch, output, args,
+        #                          self.validation_dataset, world_size(),
+        #                          self.config.datasets.validation)
+
+        new_root_w_seq = os.path.join(log_dir, seq_name)
+        if not os.path.exists(new_root_w_seq):
+            os.makedirs(new_root_w_seq)
+        np.save(os.path.join(new_root_w_seq, seq_name +'_frame_' + str(idx).zfill((4))), output['inv_depth'][0].cpu().detach().numpy())
+        # 'inv_depths': output['inv_depth'],
         return {
             'idx': batch['idx'],
             **output['metrics'],
@@ -494,7 +505,7 @@ def setup_dataset(config, mode, requirements, **kwargs):
         return None
 
     print0(pcolor('###### Setup %s datasets' % mode, 'red'))
-
+    print(requirements)
     # Global shared dataset arguments
     dataset_args = {
         'back_context': config.back_context,

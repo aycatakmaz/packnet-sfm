@@ -3,6 +3,7 @@
 import glob
 import numpy as np
 import os
+import packnet_sfm.datasets.sintel_io as sio
 
 from torch.utils.data import Dataset
 
@@ -12,6 +13,93 @@ from packnet_sfm.utils.image import load_image
 from packnet_sfm.geometry.pose_utils import invert_pose_numpy
 
 ########################################################################################################################
+
+def dummy_calibration(seq_name='alley_1'):
+    #return np.array([[688.00006104,   0.,         511.5       ],
+    #                 [  0.,         688.00006104, 217.5       ],
+    #                 [  0.,           0.,           1.        ]])
+    #return np.array([[1.120e+03, 0.000e+00, 5.115e+02],
+    #                 [0.000e+00, 1.120e+03, 2.175e+02],
+    #                 [0.000e+00, 0.000e+00, 1.000e+00]])
+    #print('dummy - seq_name: ', seq_name)
+    if seq_name=='alley_1':
+        return np.array([[688.00006104,   0.,         511.5       ],
+                         [  0.,         688.00006104, 191.5       ],
+                         [  0.,           0.,           1.        ]])
+    elif seq_name=='alley_2':
+        return np.array([[576.,    0.,  511.5],
+                         [  0.,  576.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='ambush_2':
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='ambush_4':
+        return np.array([[1.120e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 1.120e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='ambush_5':
+        return np.array([[1.120e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 1.120e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='ambush_6':
+        return np.array([[576.,    0.,  511.5],
+                         [  0.,  576.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='bamboo_1':
+        return np.array([[800.,    0.,  511.5],
+                         [  0.,  800.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='bamboo_2':
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='cave_2':
+        return np.array([[1.52859412e+03, 0.00000000e+00, 5.11500000e+02],
+                         [0.00000000e+00, 1.52859412e+03, 1.91500000e+02],
+                         [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+    elif seq_name=='cave_4':
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='market_2':
+        return np.array([[3.200e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 3.200e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='market_5':
+        return np.array([[1.120e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 1.120e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='market_6':
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='mountain_1':
+        return np.array([[1.120e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 1.120e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='shaman_2':
+        return np.array([[1.600e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 1.600e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='shaman_3':
+        return np.array([[1.120e+03, 0.000e+00, 5.115e+02],
+                         [0.000e+00, 1.120e+03, 1.915e+02],
+                         [0.000e+00, 0.000e+00, 1.000e+00]])
+    elif seq_name=='sleeping_1':
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+    elif seq_name=='sleeping_2':
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+    else:
+        return np.array([[640.,    0.,  511.5],
+                         [  0.,  640.,  191.5],
+                         [  0.,    0.,    1. ]])
+
+
 
 # Cameras from the stero pair (left is the origin)
 IMAGE_FOLDER = {
@@ -75,7 +163,7 @@ class KITTIDataset(Dataset):
     """
     def __init__(self, root_dir, file_list, train=True,
                  data_transform=None, depth_type=None, with_pose=False,
-                 back_context=0, forward_context=0, strides=(1,)):
+                 back_context=0, forward_context=0, strides=(1,), seq_name='alley_1'):
         # Assertions
         backward_context = back_context
         assert backward_context >= 0 and forward_context >= 0, 'Invalid contexts'
@@ -84,22 +172,31 @@ class KITTIDataset(Dataset):
         self.backward_context_paths = []
         self.forward_context = forward_context
         self.forward_context_paths = []
+        self.seq_name = seq_name
 
         self.with_context = (backward_context != 0 or forward_context != 0)
         self.split = file_list.split('/')[-1].split('.')[0]
 
-        self.train = train
+        self.train = self.with_context
+        if self.train:
+            print('#'*30)
+            print(backward_context)
+            print(forward_context)
+            #backward_context=1
+            #forward_context=1
+            #self.with_context = True
         self.root_dir = root_dir
         self.data_transform = data_transform
 
         self.depth_type = depth_type
+        print('depth type: ', depth_type)
         self.with_depth = depth_type is not '' and depth_type is not None
+        self.with_depth = False
         self.with_pose = with_pose
 
         self._cache = {}
         self.pose_cache = {}
         self.oxts_cache = {}
-        self.calibration_cache = {}
         self.imu2velo_calib_cache = {}
         self.sequence_origin_cache = {}
 
@@ -107,38 +204,65 @@ class KITTIDataset(Dataset):
             data = f.readlines()
 
         self.paths = []
+        self.paths_depth = []
         # Get file list from data
         for i, fname in enumerate(data):
+            self.seq_name = fname.split()[0][:-15]
             path = os.path.join(root_dir, fname.split()[0])
             if not self.with_depth:
+                #print('valda without depth')
                 self.paths.append(path)
+                self.paths_depth.append(fname.split()[0])
             else:
                 # Check if the depth file exists
-                depth = self._get_depth_file(path)
+                depth = self._get_depth_file(os.path.join(root_dir, 'depth', fname.split()[0]))
+                depth = depth[:-4] + '.dpt'
+                #print('depth: ', depth)
                 if depth is not None and os.path.exists(depth):
+                    #print('exists')
                     self.paths.append(path)
+                    self.paths_depth.append(depth)
+        print('paths length: ', len(self.paths))
 
         # If using context, filter file list
+        #####buraya bak
+        print('with context?: ' ,self.with_context)
         if self.with_context:
+            print('with context: ')
+            #print(self.paths)
             paths_with_context = []
             for stride in strides:
+                #print('stride: ', stride)
                 for idx, file in enumerate(self.paths):
+                    #print(idx)
+                    #print(file)
                     backward_context_idxs, forward_context_idxs = \
                         self._get_sample_context(
                             file, backward_context, forward_context, stride)
+                    #print(backward_context_idxs)
+                    #print(forward_context_idxs)
                     if backward_context_idxs is not None and forward_context_idxs is not None:
                         paths_with_context.append(self.paths[idx])
                         self.forward_context_paths.append(forward_context_idxs)
                         self.backward_context_paths.append(backward_context_idxs[::-1])
             self.paths = paths_with_context
-
+            #print(paths_with_context)
+        print(self.paths)
 ########################################################################################################################
 
     @staticmethod
     def _get_next_file(idx, file):
         """Get next file given next idx and current file."""
+        #print('IN NEXT FILE')
+        #print('idx: ', idx)
+        #print('basename: ', os.path.basename(file))
         base, ext = os.path.splitext(os.path.basename(file))
-        return os.path.join(os.path.dirname(file), str(idx).zfill(len(base)) + ext)
+        #print('base: ', base)
+        #print('ext: ', ext)
+        #print(('dirname: ', os.path.dirname(file)))
+        #print(('lenbase: ',len(base)))
+        #print(os.path.join(os.path.dirname(file), 'frame_' + str(idx).zfill(4) + ext))
+        return os.path.join(os.path.dirname(file), 'frame_' + str(idx).zfill(4) + ext)
 
     @staticmethod
     def _get_parent_folder(image_file):
@@ -146,12 +270,9 @@ class KITTIDataset(Dataset):
         return os.path.abspath(os.path.join(image_file, "../../../.."))
 
     @staticmethod
-    def _get_intrinsics(image_file, calib_data):
+    def _get_intrinsics(seq_name):
         """Get intrinsics from the calib_data dictionary."""
-        for cam in ['left', 'right']:
-            # Check for both cameras, if found replace and return intrinsics
-            if IMAGE_FOLDER[cam] in image_file:
-                return np.reshape(calib_data[IMAGE_FOLDER[cam].replace('image', 'P_rect')], (3, 4))[:, :3]
+        return dummy_calibration(seq_name)
 
     @staticmethod
     def _read_raw_calib_file(folder):
@@ -167,21 +288,16 @@ class KITTIDataset(Dataset):
         if self.depth_type in ['velodyne']:
             return read_npz_depth(depth_file, self.depth_type)
         elif self.depth_type in ['groundtruth']:
-            return read_png_depth(depth_file)
+            #return read_png_depth(depth_file)
+            np.expand_dims(sio.depth_read(depth_file),axis=2)
         else:
             raise NotImplementedError(
                 'Depth type {} not implemented'.format(self.depth_type))
 
     def _get_depth_file(self, image_file):
         """Get the corresponding depth file from an image file."""
-        for cam in ['left', 'right']:
-            if IMAGE_FOLDER[cam] in image_file:
-                depth_file = image_file.replace(
-                    IMAGE_FOLDER[cam] + '/data', 'proj_depth/{}/{}'.format(
-                        self.depth_type, IMAGE_FOLDER[cam]))
-                if self.depth_type not in PNG_DEPTH_DATASETS:
-                    depth_file = depth_file.replace('png', 'npz')
-                return depth_file
+        depth_file=image_file
+        return depth_file
 
     def _get_sample_context(self, sample_name,
                             backward_context, forward_context, stride=1):
@@ -207,19 +323,34 @@ class KITTIDataset(Dataset):
             List containing the indexes for the forward context
         """
         base, ext = os.path.splitext(os.path.basename(sample_name))
+        #print('base: ', base)
+        #print('ext: ', ext)
         parent_folder = os.path.dirname(sample_name)
-        f_idx = int(base)
+        #print('parent_folder: ', parent_folder)
+        f_idx = int(base[-4:])
+        #print('f_idx: ',f_idx)
 
         # Check number of files in folder
+        #print('self._cache:' , self._cache)
         if parent_folder in self._cache:
             max_num_files = self._cache[parent_folder]
+            #print('max_num_files: ', max_num_files)
         else:
             max_num_files = len(glob.glob(os.path.join(parent_folder, '*' + ext)))
+            #print('glob files')
+            #print(glob.glob(os.path.join(parent_folder, '*' + ext)))
             self._cache[parent_folder] = max_num_files
+            #print('max_num_files: ', max_num_files)
 
         # Check bounds
+        #print('backward_context: ', backward_context)
+        #print('forward: ', forward_context)
+        #print('stride: ', stride)
+        #print(str(f_idx - backward_context * stride))
+        #print(str(f_idx + forward_context * stride))
         if (f_idx - backward_context * stride) < 0 or (
                 f_idx + forward_context * stride) >= max_num_files:
+            #print('quit')
             return None, None
 
         # Backward context
@@ -228,6 +359,7 @@ class KITTIDataset(Dataset):
         while len(backward_context_idxs) < backward_context and c_idx > 0:
             c_idx -= stride
             filename = self._get_next_file(c_idx, sample_name)
+            #print('filename: ', filename)
             if os.path.exists(filename):
                 backward_context_idxs.append(c_idx)
         if c_idx < 0:
@@ -341,6 +473,16 @@ class KITTIDataset(Dataset):
         return odo_pose
 
 ########################################################################################################################
+    def center_crop_im(self, im, new_width=1024, new_height=384):
+        width, height = im.size   # Get dimensions
+        left = (width - new_width)/2
+        top = (height - new_height)/2
+        right = (width + new_width)/2
+        bottom = (height + new_height)/2
+        # Crop the center of the image
+        #return im
+        im = im.crop((left, top, right, bottom))
+        return im
 
     def __len__(self):
         """Dataset length."""
@@ -349,21 +491,19 @@ class KITTIDataset(Dataset):
     def __getitem__(self, idx):
         """Get dataset sample given an index."""
         # Add image information
+        #print('LOADING IMAGE')
+        #print(np.array(load_image(self.paths[idx])).shape)
+        #print(np.array(self.center_crop_im(load_image(self.paths[idx]))).shape)
         sample = {
             'idx': idx,
             'filename': '%s_%010d' % (self.split, idx),
-            'rgb': load_image(self.paths[idx]),
+            'rgb': self.center_crop_im(load_image(self.paths[idx])),
         }
 
         # Add intrinsics
         parent_folder = self._get_parent_folder(self.paths[idx])
-        if parent_folder in self.calibration_cache:
-            c_data = self.calibration_cache[parent_folder]
-        else:
-            c_data = self._read_raw_calib_file(parent_folder)
-            self.calibration_cache[parent_folder] = c_data
         sample.update({
-            'intrinsics': self._get_intrinsics(self.paths[idx], c_data),
+            'intrinsics': self._get_intrinsics(self.seq_name),
         })
 
         # Add pose information if requested
@@ -375,7 +515,7 @@ class KITTIDataset(Dataset):
         # Add depth information if requested
         if self.with_depth:
             sample.update({
-                'depth': self._read_depth(self._get_depth_file(self.paths[idx])),
+                'depth': self._read_depth(self._get_depth_file(self.paths_depth[idx])),
             })
 
         # Add context information if requested
@@ -385,7 +525,7 @@ class KITTIDataset(Dataset):
                                self.forward_context_paths[idx]
             image_context_paths, _ = \
                 self._get_context_files(self.paths[idx], all_context_idxs)
-            image_context = [load_image(f) for f in image_context_paths]
+            image_context = [self.center_crop_im(load_image(f)) for f in image_context_paths]
             sample.update({
                 'rgb_context': image_context
             })
@@ -407,3 +547,7 @@ class KITTIDataset(Dataset):
         return sample
 
 ########################################################################################################################
+
+
+
+

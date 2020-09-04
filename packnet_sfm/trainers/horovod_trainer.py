@@ -2,32 +2,32 @@
 
 import os
 import torch
-import horovod.torch as hvd
 from packnet_sfm.trainers.base_trainer import BaseTrainer, sample_to_cuda
 from packnet_sfm.utils.config import prep_logger_and_checkpoint
 from packnet_sfm.utils.logging import print_config
 from packnet_sfm.utils.logging import AvgMeter
+import pdb
+import datetime
+import time
 
+def get_model_name():
+    curr_time = datetime.datetime.now()
+    writer_log_dir = os.path.join('/cluster/scratch/takmaza/CVL/psfm-logdir', str(curr_time.year) + '-' + str('%02d' %curr_time.month) + '-' + str('%02d' %curr_time.day) + '-' + str('%02d' %curr_time.hour) +str('%02d' %curr_time.minute)+ str('%02d' %curr_time.second) + '-' + str('%02d' %curr_time.microsecond).zfill(6)) #'_' + str(args.lr) 
+    if not os.path.exists(writer_log_dir):
+        os.makedirs(writer_log_dir)
+    return writer_log_dir
 
 class HorovodTrainer(BaseTrainer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        hvd.init()
         torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", 1)))
-        torch.cuda.set_device(hvd.local_rank())
         torch.backends.cudnn.benchmark = True
 
         self.avg_loss = AvgMeter(50)
         self.dtype = kwargs.get("dtype", None)  # just for test for now
-
-    @property
-    def proc_rank(self):
-        return hvd.rank()
-
-    @property
-    def world_size(self):
-        return hvd.size()
+        self.model_name_temp = get_model_name()
+        print("Models and tensorboard events files are saved to:\n  ", self.model_name_temp)
 
     def fit(self, module):
 
@@ -38,14 +38,12 @@ class HorovodTrainer(BaseTrainer):
         print_config(module.config)
 
         # Send module to GPU
-        module = module.to('cuda')
+        module = module.to('cuda') #cuda
         # Configure optimizer and scheduler
         module.configure_optimizers()
 
         # Create distributed optimizer
-        compression = hvd.Compression.none
-        optimizer = hvd.DistributedOptimizer(module.optimizer,
-            named_parameters=module.named_parameters(), compression=compression)
+        optimizer = module.optimizer
         scheduler = module.scheduler
 
         # Get train and val dataloaders
@@ -58,8 +56,10 @@ class HorovodTrainer(BaseTrainer):
             self.train(train_dataloader, module, optimizer)
             # Validation
             validation_output = self.validate(val_dataloaders, module)
+            print(type(validation_output))
+            print('validated')
             # Check and save model
-            self.check_and_save(module, validation_output)
+            ####self.check_and_save(module, validation_output)
             # Update current epoch
             module.current_epoch += 1
             # Take a scheduler step
@@ -82,12 +82,14 @@ class HorovodTrainer(BaseTrainer):
             optimizer.zero_grad()
             # Send samples to GPU and take a training step
             batch = sample_to_cuda(batch)
-            output = module.training_step(batch, i)
+            output = module.training_step(batch, self.model_name_temp, i)
             # Backprop through loss and take an optimizer step
             output['loss'].backward()
             optimizer.step()
             # Append output to list of outputs
             output['loss'] = output['loss'].detach()
+            #print(output.keys())
+            #pdb.set_trace()
             outputs.append(output)
             # Update progress bar if in rank 0
             if self.is_rank_0:
@@ -95,6 +97,10 @@ class HorovodTrainer(BaseTrainer):
                     'Epoch {} | Avg.Loss {:.4f}'.format(
                         module.current_epoch, self.avg_loss(output['loss'].item())))
         # Return outputs for epoch end
+        #pdb.set_trace()
+        print(len(outputs)) #834
+        #print(outputs[0].keys()) #dict_keys(['loss', 'metrics'])
+        #print(outputs[0].values().shape)
         return module.training_epoch_end(outputs)
 
     def validate(self, dataloaders, module):
@@ -102,23 +108,38 @@ class HorovodTrainer(BaseTrainer):
         module.eval()
         # Start validation loop
         all_outputs = []
+        print('#'* 50)
+        print(len(dataloaders))
+        print(type(dataloaders[0]))
+        
         # For all validation datasets
         for n, dataloader in enumerate(dataloaders):
             # Prepare progress bar for that dataset
-            progress_bar = self.val_progress_bar(
-                dataloader, module.config.datasets.validation, n)
+            #progress_bar = self.val_progress_bar(
+            #    dataloader, module.config.datasets.validation, n)
             outputs = []
+            #print(type(dataloader))
+            #print(len(dataloader))
+            #print(dataloader[0].keys())
             # For all batches
-            for i, batch in progress_bar:
+            for i, batch in enumerate(dataloader):
+                print(i)
+                #print(batch.keys())
+                #print(dataloader[0].keys())
                 # Send batch to GPU and take a validation step
                 batch = sample_to_cuda(batch)
-                output = module.validation_step(batch, i, n)
+                #print('bak')
+                #print(module.config.datasets.train)
+                #print(type(module.config.datasets.train))
+                #print(type(module.config.datasets.train.split))
+                #print(module.config.datasets.train.split[0])
+                output = module.validation_step(batch, i, module.config.datasets.train.split[0][:-4], self.model_name_temp, i, n)
                 # Append output to list of outputs
                 outputs.append(output)
             # Append dataset outputs to list of all outputs
             all_outputs.append(outputs)
         # Return all outputs for epoch end
-        return module.validation_epoch_end(all_outputs)
+        return all_outputs #module.validation_epoch_end(all_outputs)
 
     def test(self, module):
         # Send module to GPU
