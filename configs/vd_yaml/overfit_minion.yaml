@@ -24,21 +24,21 @@ model:
         max_depth: 45.0
 datasets:
     augmentation:
-        image_shape: (384, 1024)
+        image_shape: (480, 640)
     train:
         batch_size: 1
         dataset: ['KITTI']
-        path: ['/cluster/home/takmaza/psfm/Sintel']
-        split: ['alley_1.txt']
+        path: ['/cluster/home/takmaza/psfm/VD']
+        split: ['minion.txt']
         depth_type: ['groundtruth']
-        repeat: [40]
+        repeat: [10]
     validation:
         dataset: ['KITTI']
-        path: ['/cluster/home/takmaza/psfm/Sintel']
-        split: ['alley_1.txt']
+        path: ['/cluster/home/takmaza/psfm/VD']
+        split: ['minion.txt']
         depth_type: ['groundtruth']
     test:
         dataset: ['KITTI']
-        path: ['/cluster/home/takmaza/psfm/Sintel']
-        split: ['alley_1.txt']
+        path: ['/cluster/home/takmaza/psfm/VD']
+        split: ['minion.txt']
         depth_type: ['groundtruth']
