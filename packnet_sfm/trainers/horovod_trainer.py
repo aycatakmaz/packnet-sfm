@@ -133,7 +133,7 @@ class HorovodTrainer(BaseTrainer):
                 #print(type(module.config.datasets.train))
                 #print(type(module.config.datasets.train.split))
                 #print(module.config.datasets.train.split[0])
-                output = module.validation_step(batch, i, module.config.datasets.train.split[0][:-4], self.model_name_temp, i, n)
+                output = module.validation_step(batch, i, module.config.datasets.train.split[0][:-17], self.model_name_temp, i, n)
                 # Append output to list of outputs
                 outputs.append(output)
             # Append dataset outputs to list of all outputs

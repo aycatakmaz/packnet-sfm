@@ -199,7 +199,7 @@ class KITTIDataset(Dataset):
         # Assertions
         backward_context = back_context
         assert backward_context >= 0 and forward_context >= 0, 'Invalid contexts'
-
+        self.vd_list = set(['adventcalender', 'boxing', 'hoodie', 'minion', 'shirt', 'sunflower', 'umbrella', 'upperbody'])
         self.backward_context = backward_context
         self.backward_context_paths = []
         self.forward_context = forward_context
@@ -239,7 +239,7 @@ class KITTIDataset(Dataset):
         self.paths_depth = []
         # Get file list from data
         for i, fname in enumerate(data):
-            self.seq_name = fname.split()[0][:-15]
+            self.seq_name = fname.split()[0][:-28]
             path = os.path.join(root_dir, fname.split()[0])
             if not self.with_depth:
                 #print('valda without depth')
@@ -247,6 +247,7 @@ class KITTIDataset(Dataset):
                 self.paths_depth.append(fname.split()[0])
             else:
                 # Check if the depth file exists
+                print('root dir: ', root_dir)
                 depth = self._get_depth_file(os.path.join(root_dir, 'depth', fname.split()[0]))
                 depth = depth[:-4] + '.dpt'
                 #print('depth: ', depth)
@@ -294,7 +295,8 @@ class KITTIDataset(Dataset):
         #print(('dirname: ', os.path.dirname(file)))
         #print(('lenbase: ',len(base)))
         #print(os.path.join(os.path.dirname(file), 'frame_' + str(idx).zfill(4) + ext))
-        return os.path.join(os.path.dirname(file), 'frame_' + str(idx).zfill(4) + ext)
+        #return os.path.join(os.path.dirname(file), 'frame_' + str(idx).zfill(4) + ext)
+        return os.path.join(os.path.dirname(file), 'frame-' + str(idx).zfill(6) + '.color' + ext)
 
     @staticmethod
     def _get_parent_folder(image_file):
@@ -354,12 +356,17 @@ class KITTIDataset(Dataset):
         forward_context : list of int
             List containing the indexes for the forward context
         """
+        #print('#'*30)
         base, ext = os.path.splitext(os.path.basename(sample_name))
         #print('base: ', base)
         #print('ext: ', ext)
         parent_folder = os.path.dirname(sample_name)
         #print('parent_folder: ', parent_folder)
-        f_idx = int(base[-4:])
+        #print (self.seq_name)
+        if self.seq_name in self.vd_list:
+            f_idx = int(base[-12:-6])
+        else:
+            f_idx = int(base[-4:])
         #print('f_idx: ',f_idx)
 
         # Check number of files in folder
@@ -391,6 +398,7 @@ class KITTIDataset(Dataset):
         while len(backward_context_idxs) < backward_context and c_idx > 0:
             c_idx -= stride
             filename = self._get_next_file(c_idx, sample_name)
+            #print('burda')
             #print('filename: ', filename)
             if os.path.exists(filename):
                 backward_context_idxs.append(c_idx)
