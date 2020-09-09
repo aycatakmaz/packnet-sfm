@@ -22,7 +22,39 @@ def dummy_calibration(seq_name='alley_1'):
     #                 [0.000e+00, 1.120e+03, 2.175e+02],
     #                 [0.000e+00, 0.000e+00, 1.000e+00]])
     #print('dummy - seq_name: ', seq_name)
-    if seq_name=='alley_1':
+    if seq_name=='adventcalender':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='boxing':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='hoodie':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='minion':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='shirt':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='sunflower':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='umbrella':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='upperbody':
+        return np.array([[570.342,          0.,    320.],
+                         [     0.,     570.342,    240.],
+                         [     0.,          0.,    1.  ]])
+    elif seq_name=='alley_1':
         return np.array([[688.00006104,   0.,         511.5       ],
                          [  0.,         688.00006104, 191.5       ],
                          [  0.,           0.,           1.        ]])

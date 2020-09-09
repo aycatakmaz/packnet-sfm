@@ -1,5 +1,6 @@
 Sint*
 log_*
+VD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
