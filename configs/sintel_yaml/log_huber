@@ -34,3 +34,39 @@ Resource usage summary:
 The output (if any) follows:
 
 python3: can't open file 'scripts/train.py': [Errno 2] No such file or directory
+Sender: LSF System <lsfadmin@lo-s4-029>
+Subject: Job 9924774: <python3 scripts/train.py configs/sintel_yaml/overfit_market_5.yaml> in cluster <leonhard> Exited
+
+Job <python3 scripts/train.py configs/sintel_yaml/overfit_market_5.yaml> was submitted from host <lo-login-01> by user <takmaza> in cluster <leonhard> at Mon Sep 14 21:47:03 2020
+Job was executed on host(s) <2*lo-s4-029>, in queue <gpu.4h>, as user <takmaza> in cluster <leonhard> at Tue Sep 15 06:06:53 2020
+</cluster/home/takmaza> was used as the home directory.
+</cluster/home/takmaza/psfm/configs/sintel_yaml> was used as the working directory.
+Started at Tue Sep 15 06:06:53 2020
+Terminated at Tue Sep 15 06:06:58 2020
+Results reported at Tue Sep 15 06:06:58 2020
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python3 scripts/train.py configs/sintel_yaml/overfit_market_5.yaml
+------------------------------------------------------------
+
+Exited with exit code 2.
+
+Resource usage summary:
+
+    CPU time :                                   0.22 sec.
+    Max Memory :                                 8 MB
+    Average Memory :                             3.00 MB
+    Total Requested Memory :                     8192.00 MB
+    Delta Memory :                               8184.00 MB
+    Max Swap :                                   -
+    Max Processes :                              1
+    Max Threads :                                1
+    Run time :                                   28 sec.
+    Turnaround time :                            29995 sec.
+
+The output (if any) follows:
+
+python3: can't open file 'scripts/train.py': [Errno 2] No such file or directory
