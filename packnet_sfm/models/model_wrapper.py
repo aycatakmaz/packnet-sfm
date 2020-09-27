@@ -205,7 +205,7 @@ class ModelWrapper(torch.nn.Module):
         new_root_w_seq = os.path.join(log_dir, seq_name)
         if not os.path.exists(new_root_w_seq):
             os.makedirs(new_root_w_seq)
-        np.save(os.path.join(new_root_w_seq, seq_name +'_frame_' + str(idx).zfill((4))), output['inv_depth'][0].cpu().detach().numpy())
+        np.save(os.path.join(new_root_w_seq, seq_name +'frame_' + str(idx).zfill((4))), output['inv_depth'][0].cpu().detach().numpy())
         # 'inv_depths': output['inv_depth'],
         return {
             'idx': batch['idx'],
