@@ -513,7 +513,7 @@ class KITTIDataset(Dataset):
         return odo_pose
 
 ########################################################################################################################
-    def center_crop_im(self, im, new_width=1024, new_height=384):
+    def center_crop_im(self, im, new_width=640, new_height=480):
         width, height = im.size   # Get dimensions
         left = (width - new_width)/2
         top = (height - new_height)/2
